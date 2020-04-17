@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.lss.dao.LssCnsDao">
+   
+<select id="lecList" resultType="Map">
+	SELECT 
+				lt.lec_seq,
+				lt.lec_nm,
+				lt.lec_enr,
+				lt.lec_contents,
+				lt.lec_tm,
+				lt.lec_gl,
+				lt.lec_pl,
+      			TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(substring_index(lec_st,' ',1)) total,
+				(substring_index(lt.lec_st,' ','1'))stDay,
+				(substring_index(lt.lec_ed,' ','1'))edDay,
+				lt.enr_user,
+				lt.upd_user,
+				lt.rm_seq,
+				lt.enr_date,
+       			rl.user_id,
+    		    uf.user_email,
+    		    uf.user_addr
+	FROM tb_lecture lt
+  		 LEFT JOIN tb_request_list rl
+    		  ON lt.lec_seq = rl.lec_seq
+   		 	LEFT JOIN tb_userinfo uf
+    		   ON rl.user_id = uf.loginID
+    WHERE lt.user_id =#{loginId}	
+    GROUP BY lt.lec_seq
+</select>
+	
+	<select id="selectSList" resultType="Map">
+	 SELECT 
+				lt.lec_seq,
+				lt.lec_nm,
+       			rl.user_id,
+    			uf.user_email,
+      			uf.user_addr
+	 FROM tb_lecture lt
+    		LEFT JOIN tb_request_list rl
+    		  		 ON lt.lec_seq = rl.lec_seq
+     	 	LEFT JOIN tb_userinfo uf
+    	  		     ON rl.user_id = uf.loginID
+  	 WHERE rl.lec_seq =#{lec_seq}
+	</select>
+	<select id="sListOne" resultType="Map">
+	SELECT
+		cns_seq,
+		cns_date,
+		cns_place,
+		cns_cstnt, 
+		cns_cstee,
+		cns_nm, 
+		cns_content,
+		cns_check 
+	FROM tb_counsel
+	WHERE cns_cstee =#{user_id} 
+		AND cns_nm =#{lec_nm}
+	</select>
+	
+	<update id="updateCns">
+		UPDATE tb_counsel
+			SET
+			cns_check =#{cns_check}
+		WHERE cns_seq =#{cns_seq}
+	</update>
+</mapper>

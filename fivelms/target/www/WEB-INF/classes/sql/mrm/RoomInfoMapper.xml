@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.kosmo.jobkorea.mrm.dao.RoomInfoDao">
+
+	<!-- 강의실 리스트 
+	<select id="roomList" resultType="kr.kosmo.jobkorea.mrm.model.RoomInfoModel">
+		SELECT 
+				a.rm_seq
+			,	a.rm_name
+			,	a.rm_pper
+			,	a.rm_size
+			,	b.item_seq
+			,	b.item_nm
+			,	b.item_vol
+			,	b.item_nt 
+		FROM 
+				tb_room a
+			,	tb_item b where a.rm_seq = b.rm_seq
+		ORDER BY a.rm_seq
+
+	</select>
+	-->
+	<!-- 강의실 수 구하기 -->
+	<select id="RTotalCnt" resultType="int">
+		SELECT COUNT(*) as total_cnt from
+		(
+		SELECT 
+				rm_seq
+			,	rm_name
+			,	rm_pper
+			,	rm_size
+		FROM 
+				tb_room
+		WHERE rm_yon = 'Y'
+		 <if test="(rm_name != null) and (!rm_name.equals(''))">
+	          AND rm_name LIKE concat('%', #{rm_name}, '%')
+	      </if>
+	        )a 
+		<!-- SELECT COUNT(*) as total_cnt
+		FROM tb_room
+		WHERE rm_yon = 'Y'
+		 <if test="(rm_name != null) and (!rm_name.equals(''))">
+	          AND rm_name LIKE concat('%', #{rm_name}, '%') 
+	      </if>-->
+	        
+		
+		
+		
+	</select>
+	
+	<select id="roomList" resultType="kr.kosmo.jobkorea.mrm.model.RoomInfoModel">
+		SELECT 
+				rm_seq
+			,	rm_name
+			,	rm_pper
+			,	rm_size
+			,	lgc_rm_nm
+			,	psc_rm_nm
+		FROM 
+				tb_room
+		WHERE rm_yon = 'Y'
+		  <if test="(rm_name != null) and (!rm_name.equals(''))">
+          AND rm_name LIKE concat('%', #{rm_name}, '%')
+     	 </if>
+     	 ORDER BY rm_seq
+		LIMIT #{pageIndex}, #{pageSize}
+	</select>
+		
+	
+	<!--  
+	<update id="roomDelete" parameterType="kr.kosmo.jobkorea.mrm.model.RoomInfoModel">
+		UPDATE
+			tb_item
+		SET
+			rm_yon = 'N'
+		WHERE rm_seq = #{rm_seq}
+	
+	</update>
+	-->
+	
+	<!-- roomInfo 저장 -->
+	<insert id="insertRoomInfo">
+        <selectKey resultType="string" keyProperty="rm_seq" order="BEFORE">
+            SELECT IFNULL(MAX(CAST(rm_seq AS UNSIGNED)),0) + 1 FROM tb_room 
+        </selectKey> 
+		INSERT INTO tb_room (
+		    rm_seq	
+		  ,	rm_name								
+		  , rm_pper								
+		  , rm_size								
+		  , enr_user								
+		  , enr_date
+		  , lgc_rm_nm
+		  , psc_rm_nm
+		  ,	rmPic_size					
+		) VALUES (
+		    #{rm_seq}
+		  , #{rm_name}
+		  , #{rm_pper}
+		  , #{rm_size}
+		  , #{enr_user}
+		  , now()
+		  ,	#{lgc_rm_nm}
+		  , #{psc_rm_nm}
+		  , #{rmPic_size}
+		)
+	</insert>
+	
+	
+	<!-- 강의실 정보 변경 -->
+	<update id="updateRoomInfo">
+		UPDATE 
+				tb_room
+		SET
+				rm_name = #{rm_name}
+			,	rm_pper	= #{rm_pper}
+			,	rm_size = #{rm_size}
+			,	upd_user = #{upd_user}
+			,	upd_date = now()
+			,	lgc_rm_nm = #{lgc_rm_nm}
+			,   psc_rm_nm = #{psc_rm_nm}
+			,   rmPic_size = #{rmPic_size}
+		WHERE rm_seq = #{rm_seq}
+	
+	</update>
+	
+	<!-- 강의실 정보 삭제 -->
+	<update id="roomDelete">
+		UPDATE 
+				tb_room
+		SET
+				rm_yon = 'N'
+			,	upd_user = #{upd_user}
+			,	upd_date = now()
+		WHERE rm_seq = #{rm_seq}
+		
+	</update>
+	
+	<!-- 장비 정보 출력 -->
+	<select id="itemListVue" resultType="kr.kosmo.jobkorea.mrm.model.RoomInfoModel">
+		SELECT 
+				item_seq
+			,	rm_seq
+			,	item_nm
+			,	item_vol
+			,	item_nt 
+			
+		FROM 
+				tb_item
+		WHERE rm_seq = #{rm_seq}
+		ORDER BY item_seq
+	
+	</select>
+
+	<!-- 장비 정보 저장 -->
+	<insert id="itemInsert">
+        <selectKey resultType="string" keyProperty="item_seq" order="BEFORE">
+            SELECT IFNULL(MAX(CAST(item_seq AS UNSIGNED)),0) + 1 FROM tb_item WHERE rm_seq = #{rm_seq}
+        </selectKey> 
+		INSERT INTO tb_item (
+			    item_seq
+			,	rm_seq
+	        ,	item_nm
+	        ,	item_vol
+	        ,	item_nt
+	        ,	enr_user
+	        ,	enr_date				
+		) VALUES (
+		    #{item_seq}
+		  , #{rm_seq}
+		  , #{item_nm}
+		  , #{item_vol}
+		  , #{item_nt}
+		  , #{enr_user}
+		  , now()
+		)
+	</insert>
+
+
+	<!-- 장비 정보 업데이트 -->
+	<update id="itemUpdate" parameterType="kr.kosmo.jobkorea.mrm.model.RoomInfoModel">
+		UPDATE 
+				tb_item
+		SET
+				item_nm = #{item_nm}
+			,	item_vol = #{item_vol}
+			,	item_nt = #{item_nt}
+			,	upd_user = #{upd_user}
+			,	upd_date = now()
+		WHERE item_seq = #{item_seq}
+		ORDER BY item_seq
+	</update> 
+	
+	<delete id="itemDeleteVue">
+		DELETE
+		FROM
+				tb_item
+		WHERE
+				item_seq = #{item_seq}
+	</delete>
+
+<select id="simpleInfo" resultType="kr.kosmo.jobkorea.mrm.model.RoomInfoModel">
+		SELECT 
+				rm_seq
+			,	rm_name
+			,	rm_pper
+			,	rm_size
+			,	lgc_rm_nm
+			,	psc_rm_nm
+		FROM 
+				tb_room
+		WHERE rm_seq = #{rm_seq}
+	
+	</select>
+
+
+
+</mapper>

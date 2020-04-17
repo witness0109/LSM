@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.kosmo.jobkorea.msm.dao.LecturerDao">
+
+	<select id="lectList" resultType="kr.kosmo.jobkorea.msm.model.LectureListModel">	
+	  SELECT 
+				lec.lec_seq
+			,	lec.lec_nm
+			,	ui.loginID
+			,	ui.name
+			,	ui.user_email
+			,	lec.rm_seq
+      		, 	cntsel.cnt
+      		,	room.rm_name
+			,	date_format(lec.lec_st, '%Y-%m-%d') as lec_st
+			,	date_format(lec.lec_ed, '%Y-%m-%d') as lec_ed
+		FROM 
+			tb_lecture AS lec LEFT OUTER JOIN tb_userinfo AS ui 
+			ON lec.user_id = ui.loginID,
+      		(	SELECT 
+      					lec_seq
+             		,	count(*) as cnt
+             	FROM 
+             		tb_request_list
+                GROUP BY lec_seq
+             ) cntsel,
+       		
+       		(	SELECT 
+      					rm_seq
+             		,	rm_name
+             	FROM 
+             		tb_room
+             ) room
+       WHERE lec.lec_seq = cntsel.lec_seq 
+       	 AND lec.rm_seq = room.rm_seq
+       
+	</select>
+
+	<select id="lectPeopleInfo" resultType="kr.kosmo.jobkorea.msm.model.LectureListModel">
+		SELECT 
+			  ui.loginID
+			  , ui.name
+			  , ui.user_email
+			  , uc.lec_yon
+		FROM 
+				tb_userinfo AS ui  LEFT OUTER JOIN tb_request_list AS uc 
+				ON ui.loginID = uc.user_id
+     	WHERE uc.lec_seq = #{lec_seq};
+	
+	
+	</select>
+	
+	<select id="classtListAct" resultType="kr.kosmo.jobkorea.msm.model.LectureListModel">	
+	SELECT 
+				lec.lec_seq
+			,	lec.lec_nm
+			,	lec.lec_gl
+			,	lec.lec_pl
+			,	lec.lec_contents
+			,	ui.loginID
+			,	ui.name
+			,	ui.user_email
+      		,	date_format(lec.lec_enr, '%Y. %m. %d') as lec_enr
+			,	date_format(lec.lec_st, '%Y. %m. %d') as lec_st
+			,	date_format(lec.lec_ed, '%Y. %m. %d') as lec_ed
+		FROM 
+			tb_lecture AS lec LEFT OUTER JOIN tb_userinfo AS ui 
+			ON lec.user_id = ui.loginID
+			ORDER BY lec.lec_seq;
+      	
+       
+	</select>
+
+	<insert id="applyForClass">
+		INSERT INTO tb_request_list (
+				lec_seq
+			,	user_id
+		) VALUES (
+				#{lec_seq}
+			,	#{user_id}
+		)
+	</insert>
+
+</mapper>

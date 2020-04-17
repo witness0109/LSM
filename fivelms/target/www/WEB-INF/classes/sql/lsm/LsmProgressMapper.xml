@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="kr.kosmo.jobkorea.lsm.dao.LSMProgressDao">
+
+			<select id="TeacherLecture"  resultType="Map">
+			
+			/*kr.kosmo.jobkorea.lsm.dao.LSMProgressDao.TeacherLecture*/
+			
+				SELECT 
+						  @rownum:=@rownum+1 AS row_num,
+						  lec_seq, 
+						  lec_nm,  
+						  lec_enr,  
+						  lec_contents, 
+						  lec_gl,   
+						  lec_tm,    
+						  Date_Format(lec_st, '%Y-%m-%d') AS lec_st,     
+						  Date_Format(lec_ed, '%Y-%m-%d') AS lec_ed, 
+						  enr_user, 
+						  Date_Format(enr_date, '%Y-%m-%d') AS enr_date,   
+						  upd_user,  
+						  upd_date,  
+						  rm_seq,  
+						  user_id
+				FROM tb_lecture
+				WHERE (@rownum :=0)=0 
+					AND user_id = #{LoginId}
+		
+		</select>
+
+		<select id="selectLecDetail"  resultType="Map">
+		
+			/*kr.kosmo.jobkorea.lsm.dao.LSMProgressDao.selectLecDetail*/
+			
+			SELECT
+					lec_seq,
+					lec_nm,
+					lec_enr,
+					lec_contents,
+					lec_gl,
+					lec_tm,
+					Date_Format(lec_st, '%Y-%m-%d') AS lec_st,
+					Date_Format(lec_ed, '%Y-%m-%d') AS lec_ed, 
+					Date_Format(enr_date, '%Y-%m-%d') AS enr_date, 
+					rm_seq,
+					user_id
+			FROM tb_lecture
+			WHERE lec_seq = #{lec_seq}
+
+		</select>
+
+
+</mapper>

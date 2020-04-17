@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace = "kr.kosmo.jobkorea.mss.dao.AdminCnsDao">
+	<select id="cnsList" resultType="Map">
+		SELECT 
+				lt.lec_seq,
+				lt.lec_nm,
+				lt.lec_enr,
+				lt.lec_contents,
+				lt.lec_tm,
+				lt.lec_gl,
+				lt.lec_pl,
+				(substring_index(lt.lec_st,' ','1'))stDay,
+				(substring_index(lt.lec_ed,' ','1'))edDay,
+				lt.enr_user,
+				lt.upd_user,
+				lt.rm_seq,
+				lt.enr_date,
+				contA.total
+		FROM tb_lecture lt, 
+			(SELECT 
+					 lec_seq
+					,TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(substring_index(lec_st,' ',1)) total
+				FROM 	tb_lecture
+			) contA
+		WHERE lt.lec_seq = contA.lec_seq  
+         <if test="(searchKey != null) and (!searchKey.equals(''))">
+			<choose>
+				<when test="(searchKey != null) and (searchKey eq 'lec_nm'.toString())">
+			     and lt.lec_nm LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<when test="(searchKey != null) and (searchKey eq 'user_id'.toString())">
+			     and lt.user_id LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<otherwise>
+					AND 1=2
+				</otherwise>
+			</choose>
+		</if>
+		LIMIT #{pageIndex}, #{pageSize}
+	</select>
+	<select id="countlist" resultType="int">
+		SELECT 
+				COUNT(1) AS tot_cnt
+		 FROM  tb_lecture
+		WHERE 1=1
+         <if test="(searchKey != null) and (!searchKey.equals(''))">
+			<choose>
+				<when test="(searchKey != null) and (searchKey eq 'lec_nm'.toString())">
+			     and lec_nm LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<when test="(searchKey != null) and (searchKey eq 'user_id'.toString())">
+			     and lt.user_id LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<otherwise>
+					AND 1=2
+				</otherwise>
+			</choose>
+		</if>		 
+	</select>	
+	<sql id="search" >
+		<if test="searchKey != null">
+			<if test="saerchKey == 'lec_nm'.toString()">AND lec_nm LIKE 'lec_nm%' || #{searchWord}</if>
+			<if test="saerchKey == 'user_id'.toString()">AND user_id LIKE 'user_id%' || #{searchWord}</if>
+		</if>
+	</sql>	
+
+	<select id="cnsUserList" resultType="Map">
+		SELECT 
+    			   tl.lec_seq,
+     			   tl.lec_nm,
+     			   a.loginID,
+      			   a.user_email,
+             	   a.user_addr,
+                 tc.cns_cstee,
+                 tc.cns_seq
+                 
+  		 FROM 	tb_lecture tl
+		    JOIN tb_request_list rl		
+                 ON	 rl.lec_seq =#{lec_seq},
+  			       (SELECT
+                    	          loginID, user_email, user_addr
+    		              FROM tb_userinfo tu, tb_request_list rl
+    			         WHERE tu.loginID = rl.user_id
+  		           )a
+  		         LEFT JOIN tb_counsel tc ON a.loginID = tc.cns_cstee
+  		 WHERE tl.lec_seq =#{lec_seq} AND a.loginID = rl.user_id
+                          GROUP BY loginID, user_email, user_addr, cns_cstee
+		<if test="(pageIndex != null) and (!pageIndex.equals('')) and (pageSize != null) and (!pageSize.equals(''))">
+		LIMIT #{pageIndex}, #{pageSize}
+		</if>
+	</select>
+	
+	<select id="countUser" resultType="int">
+		SELECT COUNT(1) AS tot_cnt 
+			FROM tb_lecture 
+	</select>
+	
+	<select id="selectUser" resultType="Map">
+		SELECT
+				tc.cns_seq,
+				tc.cns_date,
+				tc.cns_place,
+				tc.cns_cstnt,
+				tc.cns_cstee,
+				tc.enr_user,
+				tc.enr_date,
+				tc.upd_user,
+				tc.upd_date,
+				tc.cns_check,
+				tc.cns_content,
+				tc.cns_nm
+		FROM tb_counsel tc
+	</select>
+	
+	<insert id="inserCnsUser">
+	INSERT INTO tb_counsel
+					(
+						cns_seq,
+						cns_date,
+						cns_place,
+						cns_cstnt,
+						cns_cstee,
+						enr_user,
+						enr_date,
+						upd_user,
+						upd_date,
+						cns_check,
+						cns_content,
+						cns_nm
+					)
+					SELECT
+						IFNULL(MAX(CAST(cns_seq as UNSIGNED))+1,1),
+						#{cns_date},
+						#{cns_place},
+						#{cns_cstnt},
+						#{cns_cstee},
+						#{loginId},
+						NOW(),
+						#{upd_user},
+						NOW(),
+						#{cns_check},
+						#{cns_content},
+						#{cns_nm}
+			FROM tb_counsel
+	</insert>
+	<delete id="deleteClist">
+	DELETE FROM tb_counsel
+	WHERE cns_seq =#{cns_seq}
+		
+	</delete>
+</mapper>

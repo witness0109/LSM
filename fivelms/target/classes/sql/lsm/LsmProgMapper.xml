@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="kr.kosmo.jobkorea.lsm.dao.LSMProgressDao">
+
+	<select id="SelectAllList" resultType="Map">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMProgDao.SelectAllList*/
+			
+				SELECT 
+						  @rownum:=@rownum+1 AS row_num,
+						  lec_seq, 
+						  lec_nm,  
+						  lec_enr,  
+						  lec_contents, 
+						  lec_gl,   
+						  lec_tm,    
+						  Date_Format(lec_st, '%Y-%m-%d') AS lec_st,     
+						  Date_Format(lec_ed, '%Y-%m-%d') AS lec_ed, 
+						  enr_user, 
+						  Date_Format(enr_date, '%Y-%m-%d') AS enr_date,   
+						  upd_user,  
+						  upd_date,  
+						  rm_seq,  
+						  user_id,
+						  TO_DAYS(date_format(now(),'%y,%m,%d')) - TO_DAYS(substring_index(lec_st,' ',1)) prog,
+           	  		      TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(substring_index(lec_st,' ',1)) total,
+           	  		      TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(date_format(now(),'%y,%m,%d')) reProg						  
+				FROM tb_lecture
+				 <where>
+   				<if test="searchWord != null and searchWord !='' ">
+   					${searchKey} like '%${searchWord}%'
+   				</if>
+				<if test="rownum != null">
+   				 AND @rownum :=0)=0
+   				 </if>
+   				 And  user_id = #{LoginId}
+   				 </where>
+				LIMIT #{pageIndex},#{pageSize}
+	
+	</select>   
+
+
+	<select id="SelectDetail" resultType="kr.kosmo.jobkorea.lsm.model.LSMProgModel">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMProgDao.SelectDetail*/
+			SELECT
+					lec_seq,
+					lec_nm,
+					lec_enr,
+					lec_contents,
+					lec_gl,
+					lec_tm,
+					Date_Format(lec_st, '%Y-%m-%d') AS lec_st,
+					Date_Format(lec_ed, '%Y-%m-%d') AS lec_ed, 
+					Date_Format(enr_date, '%Y-%m-%d') AS enr_date, 
+					rm_seq,
+					user_id
+			FROM tb_lecture 
+			WHERE lec_seq = #{lec_seq}
+	
+	</select>
+	
+	<select id="cntAll" resultType="int">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMProgDao.cntAll*/
+			SELECT COUNT(1) AS tot_cnt FROM tb_lecture
+	
+	</select>
+	
+	<update id="updateLecProg" >
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMProgDao.updateLecProgl*/
+			UPDATE tb_lecture SET
+					lec_nm =  #{lec_nm}
+				  , lec_ed = #{lec_ed}
+				  , lec_contents = #{lec_contents}
+				  , upd_user = #{LoginId}
+				  ,upd_date = Now()
+			WHERE lec_seq = #{lec_seq}
+	
+	</update>
+	
+	
+</mapper>

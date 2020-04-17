@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.lss.dao.LSSEnrLecDao">
+   
+   <!-- 강사들이 올린 자료 리스트 조회 -->
+	<select id="selectLssList" resultType="Map">
+	
+			/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.ListLss*/
+			SELECT	@rownum:=@rownum+1 AS row_num
+				,	lec_seq
+				,	ldo_seq
+				,	lec_title
+				,	enr_user
+				,	ldo_cont
+				,	Date_Format(enr_date, '%Y-%m-%d') AS enr_date
+				,	Date_Format(upd_date, '%Y-%m-%d') AS upd_date
+			FROM tb_lecdocu
+			 <where>
+   				<if test="searchWord != null and searchWord !='' ">
+   					${searchKey} like '%${searchWord}%'
+   				</if>
+   				<if test="rownum != null">
+   				 (@rownum :=0)=0
+   				 </if> 
+   			</where>
+			ORDER BY ldo_seq 
+			LIMIT #{pageIndex},#{pageSize}
+
+	</select>
+	
+	<!--  단건 조회 -->
+	<select id="selectLssDetail" resultType = "Map">
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.DetailLss*/
+		SELECT lec_seq
+			,	ldo_seq
+			,	lec_title
+			,	enr_user
+			,	ldo_cont
+			,	Date_Format(enr_date, '%Y-%m-%d') AS enr_date
+			,	Date_Format(upd_date, '%Y-%m-%d') AS upd_date
+			,	lgc_fil_nm
+			,	psc_fil_nm
+			,	fil_siz
+			,	fil_ets
+			FROM tb_lecdocu
+			WHERE ldo_seq = #{ldo_seq}
+	
+	</select>
+	
+	<!-- ldo_seq 신규생성시 번호 조회 -->
+	<select id="selectldoseq" resultType="int">
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.selectldo_seq*/
+		SELECT MAX(ldo_seq) +1
+		FROM tb_lecdocu
+		where lec_seq = #{lec_seq}
+		
+	</select>
+	
+	
+		<!--  목록 총 갯수 조회 -->
+	<select id="LecDocTotalCnt" resultType="int">
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.countListLss*/
+		SELECT COUNT(1) AS tot_cnt FROM tb_lecdocu
+			
+	</select>
+	
+		<!-- 강의번호 조회 -->
+	<select id="selectLecSeq" resultType="int" >
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSBoardDao.selectLecSeq*/
+		SELECT led.lec_seq
+		FROM tb_lecdocu led , tb_lecture lec
+		WHERE led.lec_seq = lec.lec_seq
+		AND led.enr_user = #{enr_user}
+		GROUP BY led.lec_seq
+		
+	</select>
+
+	<!-- 강의명 조회 -->
+	<select id="selectLecNm" resultType="String">
+		
+		/*kr.kosmo.jobkorea.lss.dao.LSSBoardDao.selectLecNm*/
+		SELECT lec.lec_nm
+		FROM  tb_lecdocu led , tb_lecture lec
+		WHERE led.lec_seq = lec.lec_seq
+		GROUP BY lec.lec_nm
+	
+	</select>
+
+	<!-- 신규 게시판 저장  -->
+	<insert id="insertLecDoc">
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.insertLecDoc*/
+		INSERT INTO tb_lecdocu 
+		(
+			lec_seq, ldo_seq, lec_title, enr_user, ldo_cont, enr_date
+		)
+		VALUES
+		(
+				#{lec_seq} 
+			,	(
+					SELECT IFNULL(MAX(b.ldo_seq),0)+1 
+					FROM tb_lecdocu b 
+					WHERE lec_seq = #{lec_seq}
+				)
+			,	#{lec_title}
+			,	#{enr_user}
+			,	#{ldo_cont}
+			,	DATE_FORMAT(NOW(), '%Y-%c-%d %T')
+
+		)
+	
+	</insert>
+	
+	<!-- 수정 -->
+	<update id="updateLecDoc">
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.updateLecDoc*/
+		UPDATE tb_lecdocu SET
+				lec_title = #{lec_title}
+			,	ldo_cont = #{ldo_cont}
+			,	upd_date = Date_Format(NOW(), '%Y-%m-%d')
+		WHERE ldo_seq = #{ldo_seq}
+	
+	</update>
+	
+	<!-- 삭제 -->
+	<delete id="deleteLss">
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.deleteLecDoc*/
+		DELETE FROM tb_lecdocu
+		WHERE ldo_seq = ${ldo_seq}
+		
+	</delete>
+	
+	
+	<!-- 학습자료 올리기 -->
+	<update id="saveLecDocFile">
+	
+		/*kr.kosmo.jobkorea.lss.dao.LSSEnrDao.updateLecDocfile*/
+		UPDATE tb_lecdocu SET
+				lgc_fil_nm = #{lgc_fil_nm}
+  			,	psc_fil_nm = #{psc_fil_nm}
+			,	fil_siz = #{fil_siz}
+			,	fil_ets = #{fil_ets}
+		WHERE ldo_seq = #{ldo_seq}
+	
+	</update>
+
+	
+
+</mapper>

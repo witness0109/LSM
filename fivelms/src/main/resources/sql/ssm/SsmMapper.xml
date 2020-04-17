@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.ssm.dao.SsmDao"> 
+
+ <!-- 과제 제출 리스트 조회 -->
+   <select id="listTaskSend" resultType="kr.kosmo.jobkorea.ssm.model.SsmInfoModel">
+   SELECT   tk.lec_seq,
+            tk.task_seq,
+     	    tk.task_nm,
+     	    tk.enr_user,
+    	    tk.enr_date,
+     	    tk.upd_user,
+    	    tk.upd_date,
+   	   		lt.lec_nm,
+   		    lt.lec_seq
+    FROM   tb_task tk
+    join   tb_lecture lt
+ 	WHERE  tk.lec_seq = lt.lec_seq
+   </select>   
+   
+   
+   <!-- 과제 제출 총 건수 조회 -->    
+   <select id="countListSsm" resultType="int">
+      SELECT COUNT(1) AS tot_cnt FROM tb_task
+   </select>
+   
+   <!-- 과제 제출 단건 조회 -->
+   <select id="selectTaskSend" resultType="kr.kosmo.jobkorea.ssm.model.SsmInfoModel">
+      /*kr.kosmo.jobkorea.ssm.dao.Ssmdao.SelectTaskSend*/
+      SELECT task_seq,
+            lec_seq,
+            task_tm,
+            enr_user,
+            enr_date,
+            upd_user,
+            upd_date
+      FROM tb_task_send
+      WHERE task_seq = #{task_seq}
+   </select>      
+           
+   <!-- 과제 제출 저장 -->
+   <insert id="insertTaskSend">
+      /*kr.kosmo.jobkorea.ssm.dao.Ssmdao.insertTaskSend*/
+      INSERT INTO tb_task_send
+      (
+         task_seq, lec_seq, enr_user, enr_date, upd_user
+      )
+      VALUES
+      (
+            #{task_seq}
+         ,   #{lec_seq}
+         ,   #{enr_user}
+         ,   NOW()
+         ,   #{upd_user}
+      )
+   </insert>
+   
+   <!-- 과제 제출 수정 -->
+   <update id="updateTaskSend">
+   
+      /*kr.kosmo.jobkorea.ssm.dao.Ssmdao.updateTaskSend*/
+      UPDATE tb_task_send SET
+            lec_seq = #{lec_seq}
+         ,   enr_user = #{enr_user}
+         ,   upd_date = NOW()
+      WHERE task_seq = #{task_seq}
+      
+   </update>      
+   
+   <!-- 과제 제출 삭제 -->
+   <delete id="deleteTaskSend">
+   
+      /*kr.kosmo.jobkorea.ssm.dao.Ssmdao.deleteTaskSend*/
+      DELETE FROM tb_task_send WHERE task_seq = #{task_seq}
+      
+   </delete>
+   
+   <!-- 첨부파일 저장 -->
+   <insert id="saveSsmFil">
+   
+      /* kr.kosmo.jobkorea.ssm.dao.Ssmdao.saveSsmFil*/
+      
+      INSERT INTO tb_task_file
+      (
+         lec_seq, task_seq, fil_seq, lgc_fil_nm, psc_fil_nm, fil_siz, fil_ets                     
+      )
+      VALUES
+      (
+            #{lec_seq},
+            #{task_seq},
+         
+            (   
+              	SELECT IFNULL(MAX(fil_seq),0) +1
+              	FROM tb_task_file tf, tb_task_send ts
+              	WHERE tf_lec_seq = ts.lec_seq
+              	AND tf.task_seq = ts_task_seq
+              	AND ts.lec_seq = #{lec_seq} AND ts.task_seq = #{task_seq}
+            )         
+         ,   #{lgc_fil_nm}
+         ,   #{psc_fil_nm}
+         ,   #{fil_siz}
+         ,   #{fil_ets}
+      )
+
+   </insert>
+   
+   <!-- 과제 상세 목록 조회 -->
+   <select id="taskSendDtl" resultType="kr.kosmo.jobkorea.ssm.model.SsmInfoModel">
+      /*kr.kosmo.jobkorea.ssm.dao.Ssmdao.taskSendDtl*/
+      SELECT   ts.lec_seq,
+               ts.task_seq,
+               ts.enr_user,
+               ts.enr_date,
+               ts.upd_date,
+               tf.fil_seq,
+               tf.lgc_fil_nm,
+               tf.psc_fil_nm,
+               tf.fil_siz,
+               tf.fil_ets
+      FROM   tb_task_send ts
+      join   tb_task_file tf
+      WHERE ts.lec_seq = tf.lec_seq
+   </select>
+	<!-- 수강목록조회 -->
+	<select id="lectureList" resultType="Map">
+	SELECT lt.lec_seq,
+		    lt.lec_nm,
+	    	lt.user_id,
+			lt.lec_contents,
+			lt.lec_tm,
+			lt.lec_st,
+			lt.lec_ed,
+			lt.rm_seq,
+            contA.prog,	
+            contA.total,
+            contA.reProg
+      FROM tb_lecture lt
+           JOIN  tb_request_list rl	
+              ON 	lt.lec_seq = rl.lec_seq
+            	
+           		 ,(SELECT 
+           		 			lt.lec_seq
+                      		 ,TO_DAYS(date_format(now(),'%y,%m,%d')) - TO_DAYS(substring_index(lec_st,' ',1)) prog
+           	  				,TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(substring_index(lec_st,' ',1)) total
+           	  				,TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(date_format(now(),'%y,%m,%d')) reProg
+             	  	 FROM tb_lecture lt,tb_request_list rl
+              		WHERE lt.lec_seq = rl.lec_seq
+           			) contA 
+         WHERE lt.lec_seq = contA.lec_seq 
+         AND	 rl.user_id='student'
+         GROUP BY lt.lec_seq, lt.lec_nm,  lt.enr_user  
+	</select>
+	
+	<select id="countLecList" resultType="int">
+		select count(1) as tot_cnt from tb_lecture
+	</select>
+	
+	<!-- ON조건절에 아이디는 넘겨줄 필요가 없다. 왜냐하면, 그전에 이미 새션아이디를 가져왔기 때문이다. -->
+	<select id="selectLecDet" resultType="Map">
+	    SELECT lt.lec_seq,
+	    	   lt.lec_gl,
+	    	   lt.lec_pl,
+			   lt.lec_contents,
+			   contA.prog,
+			   contA.total,
+               contA.reProg
+		 FROM tb_lecture lt,
+			 (SELECT 
+			 		lec_seq
+			 		,TO_DAYS(date_format(now(),'%Y,%m,%d')) - TO_DAYS(substring_index(lec_st,' ',1)) prog
+	           		,TO_DAYS(SUBSTRING_INDEX(lec_ed,' ',1)) - TO_DAYS(date_format(lec_st,'%Y,%m,%d')) total
+	           		,TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(date_format(now(),'%y,%m,%d')) reProg
+	            FROM tb_lecture
+	            WHERE lec_seq=#{lec_seq}
+	          ) contA 
+            WHERE lt.lec_seq =#{lec_seq}
+	    GROUP BY lt.lec_seq, lt.lec_nm, lt.enr_user   
+	</select>
+
+
+
+</mapper>

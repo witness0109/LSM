@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.lsm.dao.SurveyResultDao">
+
+	<!-- 설문결과 리스트 조회 -->
+	<select id="selectSurveyList" resultType="kr.kosmo.jobkorea.lsm.model.SurveyResultModel">
+		SELECT 	a.lec_seq, 
+				a.sv_seq, 
+				b.lec_nm, 
+				a.sv_score, 
+				a.enr_user,
+				a.enr_date
+		FROM tb_survey a
+		JOIN tb_lecture b on a.lec_seq = b.lec_seq
+			<where>
+			<if test="(searchType != null) and (!searchType.equals(''))">
+				<choose>
+					<when
+						test="(searchType != null) and (searchType eq 'lec_nm'.toString())">
+						and b.lec_nm Like CONCAT('%', #{searchkeyword}, '%')
+					</when>
+					<when
+						test="(searchType != null) and (searchType eq 'sv_score'.toString())">
+						and a.sv_score LIKE CONCAT('%', #{searchkeyword}, '%')
+					</when>
+				
+				</choose>
+			</if>
+		</where>
+		ORDER BY a.enr_date DESC
+		LIMIT #{pageIndex}, #{pageSize}
+	</select>
+
+	<!-- 설문결과 총 갯수 조회 -->
+
+	<select id="countSurveyList" resultType="int">
+		SELECT COUNT(*) AS totalCnt from 
+						(SELECT a.lec_seq
+							,	a.sv_seq
+							,	b.lec_nm
+							,	a.sv_score
+							,	a.enr_user
+							,	a.enr_date
+		FROM tb_survey a
+		JOIN tb_lecture b on a.lec_seq = b.lec_seq
+		<where>
+			<if test="(searchType != null) and (!searchType.equals(''))">
+				<choose>
+					<when
+						test="(searchType != null) and (searchType eq 'lec_nm'.toString())">
+						and b.lec_nm Like CONCAT('%', #{searchkeyword}, '%')
+					</when>
+					<when
+						test="(searchType != null) and (searchType eq 'sv_score'.toString())">
+						and a.sv_score LIKE CONCAT('%', #{searchkeyword}, '%')
+					</when>
+					
+				</choose>
+			</if>
+		</where>
+		)a
+		
+	</select>
+	
+	<sql id="search">
+		<if test="searchType == 'lec_nm'.toString()">AND lec_nm LIKE 'lec_nm%' || #{searchkeyword}</if>
+		<if test="searchType == 'sv_score'.toString()">AND sv_score LIKE 'sv_score%' || #{searchkeyword}</if>
+	</sql>
+	
+	<!-- 설문결과 단건 조회 -->
+	<select id="selectSurveyDetail" resultType="kr.kosmo.jobkorea.lsm.model.SurveyResultModel">
+		SELECT 	a.lec_seq,
+				a.sv_seq,
+				b.lec_nm,
+				a.sv_score,
+				a.enr_user,
+				a.enr_date
+		FROM tb_survey a
+			JOIN tb_lecture b on a.lec_seq = b.lec_seq
+			WHERE a.lec_seq = #{lec_seq}
+			<if test="(searchType != null) and (!searchType.equals(''))">
+				<choose>
+					<when
+						test="(searchType != null) and (searchType eq 'lec_nm'.toString())">
+						and b.lec_nm Like CONCAT('%', #{searchkeyword}, '%')
+					</when>
+					<when
+						test="(searchType != null) and (searchType eq 'sv_score'.toString())">
+						and a.sv_score LIKE CONCAT('%', #{searchkeyword}, '%')
+					</when>
+					
+				</choose>
+			</if>
+		ORDER BY a.enr_date DESC
+	</select>
+	
+</mapper>

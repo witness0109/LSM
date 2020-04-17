@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.ssm.dao.StuQnaDao">
+
+		<!--   qna 리스트 조회 -->
+	<select id="qnaList" resultType="Map">
+			
+			SELECT	@ROWNUM := @ROWNUM +1 AS row,
+				qna_seq, qna_title, qna_contents, qna_cnt, file_nm, file_loc, 
+				file_size, enr_user, enr_date, upd_user, upd_date
+			FROM	tb_qna ,(select @ROWNUM := 0) aa 
+   			<where>
+   				<if test="searchword != null and searchword !='' ">
+   					${searchkey} like '%${searchword}%'
+   				</if>
+   			</where>
+   			ORDER BY cast(qna_seq as unsigned)
+			LIMIT #{pageIndex}, #{pageSize} 
+	</select>		 
+
+	<select id="selectQna" resultType="Map">
+			
+			SELECT	
+				qna_seq, qna_title, qna_contents, qna_cnt, file_nm, file_loc, 
+				file_size, enr_user, enr_date, upd_user, upd_date
+			FROM	tb_qna 
+   			WHERE qna_seq = #{qna_seq}
+   			
+	</select>
+	
+	
+	<select id="selectQnaList" resultType="Map">
+			SELECT	
+				qna_seq, qna_title, qna_contents, qna_cnt, file_nm, file_loc, 
+				file_size, enr_user, enr_date, upd_user, upd_date
+			FROM	tb_qna 
+			<where>
+   				<if test="searchword != null and searchword !='' ">
+   					${searchkey} like '%${searchword}%'
+   				</if>
+   			</where>
+   			ORDER BY cast(qna_seq as unsigned)
+			LIMIT #{pageIndex}, #{pageSize} 
+	
+	
+	</select>
+	
+	
+
+	<select id="getTotalCnt" resultType="int">
+		SELECT COUNT(*) AS tot_cnt 
+		FROM tb_qna
+		<where>
+   				<if test="searchword != null and searchword !='' ">
+   					${searchkey} like '%${searchword}%'
+   				</if>
+   			</where>
+	</select>
+
+
+
+	<insert id="insertQna">
+	     insert into tb_qna (
+			   qna_seq,qna_title,qna_contents,qna_cnt,file_nm,file_loc,file_size,enr_user,enr_date,upd_user,upd_date
+			)select
+			  COALESCE(MAX(cast(qna_seq as unsigned))+1,1)<!-- qna_seq - IN varchar(20) -->
+			  ,#{qna_title}  <!-- qna_title - IN varchar(50) -->
+			  ,#{qna_contents}   <!-- qna_contents - IN varchar(50)-->
+			  ,0    <!-- qna_cnt - IN int(11) -->
+			  ,#{fileInfo.file_nm}   <!-- file_nm - IN varchar(50) -->
+			  ,#{fileInfo.file_loc}  <!--  file_loc - IN varchar(50) -->
+			  ,#{fileInfo.file_size}   <!-- file_size - IN varchar(50) -->
+			  ,#{enr_user}   <!-- enr_user - IN varchar(20) -->
+			  ,DATE_FORMAT(NOW(),'%Y-%c-%d %T' )  <!--  enr_date - IN date -->
+			  ,#{upd_user}   <!-- upd_user - IN varchar(20) -->
+			  ,DATE_FORMAT(NOW(),'%Y-%c-%d %T' )   <!--  upd_date - IN date -->
+			from tb_qna
+	</insert>
+
+	<update id="selectQnaCountup">
+		update tb_qna set qna_cnt = qna_cnt+1
+		where qna_seq = #{qna_seq}
+	</update>
+	
+	<update id="updateQna">
+		update tb_qna SET
+		   qna_title = #{qna_title} <!-- varchar(50) -->
+		  ,qna_contents =  concat(DATE_FORMAT(NOW(),'%Y-%c-%d %T' ),'- 수정됨 \n',#{qna_contents}) <!-- varchar(50) -->
+		  ,file_nm = #{file_nm} <!-- varchar(50) -->
+		  ,file_loc = #{file_loc}  <!--  varchar(50) -->
+		  ,file_size = #{file_size}  <!-- varchar(50) -->
+		  ,upd_user = #{loginID} <!-- varchar(20) -->
+		  ,upd_date = DATE_FORMAT(NOW(),'%Y-%c-%d %T' )  <!-- date -->
+		WHERE qna_seq = #{qna_seq} <!--  varchar(20) -->
+	
+	</update>
+
+	
+	<select id="getListReply" resultType="Map">
+		select qna_seq, rpy_seq,no, rpy_lvl, rpy_contents, 
+    		   enr_user, enr_date, upd_user, upd_date 
+		from tb_qna_reply
+		where qna_seq=#{qna_seq}
+		group by  qna_seq, rpy_seq,no
+	</select>
+
+
+	<insert id="insertReply">
+		insert into tb_qna_reply (
+		  qna_seq,rpy_seq,no,rpy_lvl,rpy_contents,
+		  enr_user,enr_date,upd_user,upd_date
+		)SELECT 
+		   #{qna_seq}                
+		  ,COALESCE(MAX(rpy_seq)+1,1)
+		  ,COALESCE(MAX(no)+1,1)           
+		  ,#{rpy_lvl}              
+		  ,#{rpy_contents}     
+		  ,#{enr_user}              
+		  ,DATE_FORMAT(NOW(),'%Y-%c-%d %T' )
+		  ,#{upd_user}               
+		  ,DATE_FORMAT(NOW(),'%Y-%c-%d %T' )
+		FROM tb_qna_reply;
+	
+	</insert>
+	
+	<insert id="insertReply2">
+		insert into tb_qna_reply (
+		  qna_seq,rpy_seq,no,rpy_lvl,rpy_contents,
+		  enr_user,enr_date,upd_user,upd_date
+		)SELECT 
+		   #{qna_seq}                
+		  ,#{rpy_seq}
+		  ,COALESCE(MAX(no)+1,1)           
+		  ,#{rpy_lvl}              
+		  ,LTRIM(replace(#{rpy_contents},subSTring_index(#{rpy_contents},' ',1),''))           
+		  ,#{enr_user}              
+		  ,DATE_FORMAT(NOW(),'%Y-%c-%d %T' )
+		  ,#{upd_user}               
+		  ,DATE_FORMAT(NOW(),'%Y-%c-%d %T' )
+		FROM tb_qna_reply;
+	
+	</insert>
+	
+	<select id="getDirectory" resultType="String">
+		select  concat('F', date_format(now(),'%y%m%d')) AS dirPath
+	</select>
+	
+	<delete id="deleteQna">
+		delete  from tb_qna
+		where qna_seq= #{qna_seq}
+	</delete>
+
+
+
+
+
+</mapper>

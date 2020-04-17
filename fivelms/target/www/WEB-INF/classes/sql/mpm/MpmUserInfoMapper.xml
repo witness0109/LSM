@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.mpm.dao.MpmUserInfoDao">
+   
+   <!-- 유저 정보 리스트  -->
+   <!-- 학생 : S , 강사 : T -->
+   <select id="selectUserInfoList" parameterType="java.util.Map" resultType="kr.kosmo.jobkorea.mpm.model.MpmUserInfoModel">
+      /*kr.kosmo.jobkorea.mpm.dao.MpmDao.selectStudntList*/
+            SELECT  
+            loginID
+			,password
+			,name
+			,user_type
+			,user_email
+			,user_addr
+			,addr_detail
+			,user_post
+			,user_joinDate
+			,status_yn
+			,regUserId
+              FROM    tb_userinfo
+              where 1=1
+            and status_yn = 'Y'   
+            <if test=" user_type != null and user_type !=''  " >
+			and user_type =#{user_type}
+			</if>
+            <if test=" searchTxt != null and searchTxt !=''  " >
+			and name like CONCAT('%', #{searchTxt}, '%')
+			</if>
+            <if test=" fromDt != null and fromDt !=''  " >
+			<!-- and user_joinDate >=  DATE_FORMAT(CONCAT('#{fromDt}','000000'),'%y-%m-%d %H:%i:%S') -->
+			and user_joinDate >=  DATE_FORMAT('${fromDt} 00:00:00','%y-%m-%d %H:%i:%S')
+			</if>
+            <if test=" toDt != null and toDt !=''  " >
+			and user_joinDate <![CDATA[<=]]>  DATE_FORMAT('${toDt} 23:59:59','%y-%m-%d %H:%i:%S')
+			</if>
+			order by user_joinDate desc
+     </select>
+     
+   	<select id="selectUserInfo" parameterType="java.util.Map" resultType="kr.kosmo.jobkorea.mpm.model.MpmUserInfoModel">
+            SELECT  
+            loginID
+			,password
+			,name
+			,user_type
+			,user_email
+			,user_addr
+			,addr_detail
+			,user_post
+			,user_joinDate
+			,status_yn
+			,regUserId
+              FROM    tb_userinfo
+              where 1=1
+            and status_yn = 'Y'   
+            <if test=" user_type != null and user_type !=''  " >
+			and user_type =#{user_type}
+			</if>
+            <if test=" loginID != null and loginID !=''  " >
+			and loginID =#{loginID}
+			</if>
+			
+     </select>
+     
+     
+     
+     
+     <insert id="insertUserInfo" parameterType="kr.kosmo.jobkorea.mpm.model.MpmUserInfoModel">
+		/*kr.kosmo.jobkorea.system.dao.ComnCodDao.insertComnGrpCod*/
+		INSERT INTO tb_userinfo
+		(
+            loginID,
+            <if test=" password != null and password !=''  " >
+			password,
+			</if>
+			<if test=" name != null and name !=''  " >
+			name,
+			</if>
+			<if test=" user_type != null and user_type !=''  " >
+			user_type,
+			</if>
+			<if test=" user_email != null and user_email !=''  " >
+			user_email,
+			</if>
+			<if test=" user_addr != null and user_addr !=''  " >
+			user_addr,
+			</if>
+			<if test=" addr_detail != null and addr_detail !=''  " >
+			addr_detail,
+			</if>
+			<if test=" user_post != null and user_post !=''  " >
+			user_post,
+			</if>
+			user_joinDate,
+			status_yn,
+			regUserId
+		)
+		VALUES
+		(
+				#{loginID}
+				<if test=" password != null and password !=''  " >
+			,	#{password}
+				</if>
+				<if test=" name != null and name !=''  " >
+			,	#{name}
+				</if>
+				<if test=" user_type != null and user_type !=''  " >
+			,	#{user_type}
+				</if>
+				<if test=" user_email != null and user_email !=''  " >
+			,	#{user_email}
+				</if>
+				<if test=" user_addr != null and user_addr !=''  " >
+			,	#{user_addr}
+				</if>
+				<if test=" addr_detail != null and addr_detail !=''  " >
+			,	#{addr_detail}
+				</if>
+				<if test=" user_post != null and user_post !=''  " >
+			,	#{user_post}
+				</if>
+			,	NOW()
+			,	'Y'
+			    <if test=" regUserId != null and regUserId !=''  " >
+			,	#{regUserId}
+				</if>
+		)		
+	</insert>
+	<update id="deleteUserInfo" parameterType="kr.kosmo.jobkorea.mpm.model.MpmUserInfoModel">
+	 update tb_userinfo set
+	 status_yn = 'N',
+	 updateDate = NOW() 
+	 where 1=1
+	 and loginID = #{loginID}
+	</update>
+	
+	<update id="updateUserInfo" parameterType="kr.kosmo.jobkorea.mpm.model.MpmUserInfoModel">
+	 update tb_userinfo set
+	 <if test=" password != null and password !=''  " >
+	 password = #{password},
+	 </if>
+	 <if test=" name != null and name !=''  " >
+	 name = #{name},
+	 </if>
+	 <if test=" user_type != null and user_type !=''  " >
+	 user_type =#{user_type},
+	 </if>
+	 <if test=" user_email != null and user_email !=''  " >
+	 user_email = #{user_email},
+	 </if>
+	 <if test=" user_addr != null and user_addr !=''  " >
+	 user_addr = #{user_addr},
+	 </if>
+	 <if test=" addr_detail != null and addr_detail !=''  " >
+	 addr_detail = #{addr_detail},
+	 </if>
+	 <if test=" user_post != null and user_post !=''  " >
+	 user_post = #{user_post},
+	 </if>
+	 <if test=" status_yn != null and status_yn !=''  " >
+	 status_yn = #{status_yn},
+	 </if>
+	 updateDate = NOW(),
+	 regUserId = #{regUserId}
+	 where 1=1
+	 and loginID = #{loginID}
+	</update>
+</mapper>
+
+
+

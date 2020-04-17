@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace = "kr.kosmo.jobkorea.mss.dao.AdminPlDao">
+	<select id="aPlist" resultType="Map">
+		SELECT 
+				lt.lec_seq,
+				lt.lec_nm,
+				lt.lec_enr,
+				lt.lec_contents,
+				lt.lec_tm,
+				lt.lec_gl,
+				lt.lec_pl,
+				lt.lec_st,
+				lt.lec_ed,
+				lt.enr_user,
+				lt.upd_user,
+				lt.rm_seq,
+				lt.enr_date,
+				contA.total
+		FROM tb_lecture lt, 
+			(SELECT 
+					 lec_seq
+					,TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(substring_index(lec_st,' ',1)) total
+				FROM 	tb_lecture
+			) contA
+		WHERE lt.lec_seq = contA.lec_seq  
+         <if test="(searchKey != null) and (!searchKey.equals(''))">
+			<choose>
+				<when test="(searchKey != null) and (searchKey eq 'lec_nm'.toString())">
+			     and lt.lec_nm LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<when test="(searchKey != null) and (searchKey eq 'rm_seq'.toString())">
+			     and lt.rm_seq LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<otherwise>
+					AND 1=2
+				</otherwise>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="countaPlist" resultType="int">
+		SELECT 
+				COUNT(1) AS tot_cnt
+		 FROM  tb_lecture
+		WHERE 1=1
+         <if test="(searchKey != null) and (!searchKey.equals(''))">
+			<choose>
+				<when test="(searchKey != null) and (searchKey eq 'lec_nm'.toString())">
+			     and lec_nm LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<when test="(searchKey != null) and (searchKey eq 'rm_seq'.toString())">
+			     and rm_seq LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<otherwise>
+					AND 1=2
+				</otherwise>
+			</choose>
+		</if>		 
+	</select>
+	
+	<sql id="search">
+		<if test="searchKey != null">
+			<if test="saerchKey == 'lec_nm'.toString()">AND lec_nm LIKE 'lec_nm%' || #{searchWord}</if>
+			<if test="saerchKey == 'rm_seq'.toString()">AND rm_seq LIKE 'rm_seq%' || #{searchWord}</if>
+		</if>
+	</sql>
+	
+	<select id ="selectaPlist" resultType="kr.kosmo.jobkorea.mss.model.AdminLecModel">
+		SELECT 
+				lec_seq,
+				user_id,
+				rm_seq,
+				upd_date,
+				upd_user,
+				enr_date,
+				enr_user,
+				file_size,
+				file_loc,
+				file_nm,
+				lec_ed,
+				lec_st,
+				lec_tm,
+				lec_pl,
+				lec_gl,
+				lec_contents,
+				SUBSTRING_INDEX(lec_enr,' ',1) lec_enr,
+				lec_nm
+		FROM tb_lecture 
+		WHERE lec_seq=#{lec_seq}
+		
+	</select>
+	<update id="updateaPlist">
+		UPDATE tb_lecture
+			 SET
+				lec_seq =#{lec_seq},
+				user_id =#{user_id},
+				rm_seq =#{rm_seq},
+				upd_date =#{upd_date},
+				upd_user =#{upd_user},
+				enr_date =#{enr_date},
+				enr_user =#{enr_user},
+				lec_ed =#{lec_ed},
+				lec_st =#{lec_st},
+				lec_tm =#{lec_tm},
+				lec_pl =#{lec_pl},
+				lec_gl =#{lec_gl},
+				lec_contents =#{lec_contents},
+				lec_enr =#{lec_enr},
+				lec_nm =#{lec_nm}
+		WHERE lec_seq=#{lec_seq}
+	</update>
+	
+	<delete id="deletePlist">
+		DELETE FROM tb_lecture
+		WHERE lec_seq =#{lec_seq}
+	</delete>
+	<insert id="insertaPlist">
+	INSERT INTO tb_lecture
+	(
+				lec_seq,
+				user_id,
+				rm_seq, 
+				upd_date, 
+				upd_user, 
+				enr_date, 
+				enr_user,
+				lec_ed,
+				lec_st, 
+				lec_tm,
+				lec_pl, 
+				lec_gl, 
+				lec_contents, 
+				lec_enr, 
+				lec_nm
+		)
+		SELECT
+				max(cast(lec_seq as UNSIGNED ))+1
+				,#{user_id}
+				,#{rm_seq}
+				,NOW()
+				,#{loginId}
+				,NOW()
+				,#{loginId}
+				,#{lec_ed}
+				,#{lec_st}
+				,#{lec_tm}
+				,#{lec_pl}
+				,#{lec_gl}
+				,#{lec_contents}
+				,#{lec_enr}
+				,#{lec_nm}
+	FROM tb_lecture
+	</insert>
+</mapper>

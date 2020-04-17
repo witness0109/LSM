@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.lsm.dao.LectureListDao">
+	
+	<!-- 전체 조회 -->
+	<select id="lecList" resultType="Map">
+		SELECT lt.lec_seq,
+		  		 	lt.lec_nm,
+	    			lt.user_id,
+					lt.lec_contents,
+					lt.lec_tm,
+					lt.lec_st,
+					lt.lec_ed,
+					lt.rm_seq,
+					lt.upd_user,
+					lt.enr_user,
+					rl.user_id
+      	FROM tb_lecture lt, tb_request_list rl
+      	Where lt.lec_seq = rl.lec_seq
+      	AND ${searchKey} like '%${searchWord}%'  
+        AND	 lt.user_id=#{loginId}
+        GROUP BY lt.lec_seq, lt.lec_nm
+	</select>
+	
+	<!-- 강의 목록 카운트 -->
+	<select id="countlecList" resultType="int">
+	SELECT COUNT(1) AS tot_cnt FROM tb_lecture
+	</select>
+	
+	<!-- 학생 조회 -->
+	<select id="selectlecDtl" resultType="Map">
+		SELECT
+				lt.lec_nm,
+				a.user_id
+		FROM tb_lecture lt
+		JOIN tb_request_list rl
+		ON   lt.lec_seq = rl.lec_seq
+		AND  lt.user_id = #{loginId},
+			(select
+				rl.user_id
+			 from tb_request_list rl, tb_lecture lt
+			 WHERE rl.lec_seq = lt.lec_seq
+		 	)a
+		GROUP BY lt.lec_nm
+	</select>	 				
+
+</mapper>

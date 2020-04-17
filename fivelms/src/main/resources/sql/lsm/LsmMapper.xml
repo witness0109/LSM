@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.kosmo.jobkorea.lsm.dao.LSMBoardDao">
+   
+<!-- 강사들이 올린 리스트 조회 -->
+	<select id="selectLsmBoardList" resultType="Map">
+	
+			SELECT	@rownum:=@rownum+1 AS row_num
+				,a.task_seq
+				,b.lec_seq
+				,b.lec_nm
+				,a.task_nm
+				,a.enr_user
+				,Date_Format(a.enr_date, '%Y-%m-%d') AS enr_date
+			FROM tb_task a , tb_lecture b
+			WHERE (@rownum :=0)=0
+			AND  a.lec_seq = b.lec_seq
+			ORDER BY task_seq DESC
+			LIMIT #{pageIndex},#{pageSize}
+
+	</select>
+
+	<!--  목록 총 갯수 조회 -->
+	<select id="countListLsmCod" resultType="int">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMBoardDao.countListLsmGrpCod*/
+		SELECT COUNT(1) AS tot_cnt FROM tb_task
+			
+	</select>
+
+
+	<!-- 강의번호 조회 -->
+	<select id="selectLecSeq" resultType="int" >
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMBoardDao.selectLecSeq*/
+		SELECT tas.lec_seq
+		FROM tb_lecture lec ,  tb_task tas	
+		WHERE tas.lec_seq = lec.lec_seq
+		GROUP BY tas.lec_seq
+		
+	</select>
+
+	<!-- 강의명 조회 -->
+	<select id="selectLecNm" resultType="String">
+		
+		/*kr.kosmo.jobkorea.lsm.dao.LSMBoardDao.selectLecNm*/
+		SELECT lec.lec_nm
+		FROM tb_lecture lec ,  tb_task tas
+		WHERE tas.lec_seq = lec.lec_seq
+		GROUP BY lec.lec_nm
+	
+	</select>
+
+	<!-- 단건 조회 -->
+	<select id="selectLsmCod"  resultType="Map">
+		
+		/*kr.kosmo.jobkorea.lsm.dao.LSMBoardDao.selectLsmCod*/
+		SELECT  TS.task_seq
+			, TS.lec_seq
+			, TF.fil_seq
+			, TL.lec_nm
+			, TS.task_nm
+			, TS.enr_user
+			, TS.task_cont
+		FROM tb_task TS, tb_lecture TL, tb_task_file TF
+		WHERE TS.lec_seq = TL.lec_seq 
+		AND TS.task_seq = #{task_seq} 
+		AND TS.lec_seq = #{lec_seq}
+		GROUP BY task_seq
+		
+	</select>
+
+
+	<!-- 저장  -->
+	<insert id="insertLsmCod">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LsmDao.insertLsmCod*/
+		INSERT INTO tb_task
+		(
+			task_seq, lec_seq, task_nm, enr_user, task_cont, enr_date 
+		)
+		VALUES
+		(
+				<choose>
+					<when test="(task_seq == null)">
+					 task_seq = '1' 
+					</when>
+					<otherwise>
+					(SELECT IFNULL(MAX(CAST(b.task_seq AS UNSIGNED)),0) + 1 FROM tb_task b WHERE lec_seq = #{lec_seq} )
+					</otherwise>
+				</choose>
+			,	#{lec_seq}
+			,	#{task_nm}
+			,	#{enr_user}
+			,   #{task_cont}
+			,	now()
+		)
+		</insert>
+
+	
+	<!-- task_Seq 최대값 조회-->
+	<select id="selectMaxNum"  resultType="String">		
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMBoardDao.selectmaxnum*/
+		SELECT MAX(CAST(task_seq AS UNSIGNED))+1 FROM tb_task where lec_seq = #{lec_seq}		
+		
+	</select>
+
+	<!-- 삭제 -->
+	<delete id="deleteLsmCod">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LsmDao.deleteLsmCod*/
+		DELETE FROM tb_task WHERE task_seq = #{task_seq} and lec_seq =#{lec_seq}
+		
+	</delete>
+	
+	<!-- 수정  -->
+	<update id="updateLsmCod">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LsmDao.updateLsmCod*/
+		UPDATE tb_task SET
+				lec_seq = #{lec_seq}
+			,	task_nm = #{task_nm}
+			,	enr_user = #{enr_user}
+			,	task_cont = #{task_cont}
+			,	upd_date = NOW()
+		WHERE task_seq = #{task_seq} and lec_seq=${lec_seq}
+		
+	</update>
+	
+	<!-- 첨부파일저장 -->
+	<insert id="saveLsmFil">
+	
+		/* kr.kosmo.jobkorea.lsm.dao.LsmDao.saveLsmFil*/
+		
+		INSERT INTO tb_task_file
+		(
+		   lec_seq, task_seq, fil_seq, lgc_fil_nm, psc_fil_nm, fil_siz, fil_ets
+		)
+		VALUES
+		(
+				#{lec_seq}
+			,  
+				#{task_seq}
+			,  
+			(
+			     	SELECT  IFNULL(MAX(fil_seq),0) +1
+			     	FROM tb_task_file tf, tb_task tb
+			       WHERE tf.lec_seq = tb.lec_seq 
+			       AND tf.task_seq = tb.task_seq
+			       AND tb.lec_seq = #{lec_seq} AND tb.task_seq = #{task_seq}
+				)			
+			,	#{lgc_fil_nm}
+			,	#{psc_fil_nm}
+			,	#{fil_siz}
+			,	#{fil_ets}
+		)
+
+	</insert>
+	
+	<!--  첨부파일목록조회 -->
+	<select id= "listLsmFil" resultType = "Map">
+		/* kr.kosmo.jobkorea.lsm.dao.lsmBoardDao.listLsmFil*/
+		SELECT	tf.task_seq
+			,	fil_seq as snm
+			,	lgc_fil_nm
+			, 	psc_fil_nm
+			,	 fil_siz
+			, 	fil_ets
+		FROM  tb_task_file tf, tb_task tb 
+		WHERE  tf.task_seq = tb.task_seq 
+						AND tf.lec_seq = tb.lec_seq 
+						AND tf.lec_seq = #{lec_seq} AND tf.task_seq = #{task_seq} 
+	</select>
+	
+	<!-- 게시글 첨부 단건 조회 -->
+	<select id="selectLsmFil" resultType="Map">
+		/* kr.kosmo.jobkorea.lsm.dao.lsmBoardDao.selectLsmFil*/
+		SELECT	task_seq
+			,	fil_seq as snm
+			,	lgc_fil_nm
+			, 	psc_fil_nm
+			,	 fil_siz
+			, 	fil_ets
+		FROM		tb_task_file
+		WHERE	task_seq = #{task_seq}
+			AND fil_seq = #{snm}
+	</select>
+		
+		<!-- 과제제출 학생들 첨부 단건 조회 , 원태 이전-->
+	<select id="selectStuFil" resultType="Map">
+		/* kr.kosmo.jobkorea.lsm.dao.lsmBoardDao.selectStuFil*/
+		SELECT	task_seq
+			,	fil_seq as snm
+			,	lgc_fil_nm
+			, 	psc_fil_nm
+			,	 fil_siz
+			, 	fil_ets
+		FROM		tb_task_file
+		WHERE	task_seq = #{task_seq}
+			AND lec_seq = #{lec_seq}
+	</select>
+
+	<!-- 첨부파일수정 -->
+	<update id="updateLsmFil">
+		/* kr.kosmo.jobkorea.lsm.dao.lsmBoardDao.updateLsmFil*/
+		UPDATE tb_task_file SET
+				lgc_fil_nm = #{lgc_fil_nm}
+			, 	psc_fil_nm = #{psc_fil_nm}
+			,	 fil_siz = #{fil_siz}
+			, 	fil_ets = #{fil_ets}
+		WHERE task_seq = #{task_seq}
+			AND fil_seq =#{snm}
+	</update>
+	
+	<!-- 게시글 첨부 파일 단건 삭제  -->
+	<delete id = "deleteLsmFil">
+		/* kr.kosmo.jobkorea.lsm.dao.lsmBoardDao.deleteLsmFil*/
+		DELETE FROM tb_task_file
+		WHERE fil_seq = #{fil_seq}
+			<if test="listLsmSnm != null">
+			AND fil_seq IN
+        			<foreach collection="listLsmSnm" item="item" index="index" separator="," open="(" close=")">
+            			#{item}
+        			</foreach>
+			</if>
+	</delete>
+	
+	
+		<!-- 과제 제출 학생 조회  -->
+		<select id="selectLsmStuList" resultType="Map">
+			/* kr.kosmo.jobkorea.lsm.dao.lsmBoardDao.SelectLsmStuList*/
+		
+			SELECT	@rownum:=@rownum+1 AS row_num
+				,ts.task_seq
+				,ts.lec_seq
+				,Date_Format(ts.task_tm, "%Y-%m-%d") AS task_tm
+				,ts.enr_user
+				,Date_Format(ts.enr_date, "%Y-%m-%d") AS enr_date
+				,tf.lgc_fil_nm
+				,lc.lec_nm
+			FROM tb_task_send ts , 
+						tb_task_file tf , 
+							(
+								SELECT lec_nm 
+								FROM tb_lecture lec
+								WHERE lec.lec_seq = #{lec_seq}
+								) lc
+			WHERE (@rownum :=0)=0
+			     AND ts.lec_seq = tf.lec_seq 
+			     AND ts.task_seq = tf.task_seq
+			     AND ts.task_seq = #{task_seq} AND ts.lec_seq = #{lec_seq}
+			ORDER BY enr_date DESC
+			LIMIT #{pageIndex}, #{pageSize}
+	</select>
+	
+		<!--해당  과제 제출 목록 총 갯수 조회 -->
+	<select id="countLsmStuListCod" resultType="int">
+	
+		/*kr.kosmo.jobkorea.lsm.dao.LSMBoardDao.countLsmStuListCod*/
+		SELECT COUNT(1) AS stu_tot_cnt FROM tb_task_send
+		WHERE lec_seq = #{lec_seq} AND task_seq = #{task_seq}
+			
+	</select>
+
+
+</mapper>

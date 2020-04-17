@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace = "kr.kosmo.jobkorea.lss.dao.LssDao">
+	<select id="pListAll" resultType="Map">
+		SELECT 
+				lt.lec_seq,
+				lt.lec_nm,
+				lt.lec_enr,
+				lt.lec_contents,
+				lt.lec_tm,
+				lt.lec_gl,
+				lt.lec_pl,
+				lt.lec_st,
+				lt.lec_ed,
+				lt.enr_user,
+				lt.upd_user,
+				lt.rm_seq,
+				contA.total
+		FROM tb_lecture lt,
+			(SELECT 
+					 lec_seq
+					,TO_DAYS(substring_index(lec_ed,' ',1)) - TO_DAYS(substring_index(lec_st,' ',1)) total
+				FROM 	tb_lecture
+			) contA
+		WHERE lt.lec_seq = contA.lec_seq  
+		  AND lt.user_id =#{loginId} AND lt.lec_seq = contA.lec_seq
+		  
+         <if test="(searchKey != null) and (!searchKey.equals(''))">
+			<choose>
+				<when test="(searchKey != null) and (searchKey eq 'lec_nm'.toString())">
+			     and lt.lec_nm LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<when test="(searchKey != null) and (searchKey eq 'rm_seq'.toString())">
+			     and lt.rm_seq LIKE CONCAT('%', #{searchWord}, '%')
+				</when>
+				<otherwise>
+					AND 1=2
+				</otherwise>
+			</choose>
+		</if>
+		LIMIT #{pageIndex}, #{pageSize}
+	</select>
+	
+	<select id="countPlist" resultType="int">
+		SELECT 
+				COUNT(1) AS tot_cnt
+		 FROM  tb_lecture
+	</select>
+	
+	<sql id="search">
+		<if test="searchKey != null">
+			<if test="saerchKey == 'lec_nm'.toString()">AND lec_nm LIKE 'lec_nm%' || #{searchWord}</if>
+			<if test="saerchKey == 'rm_seq'.toString()">AND rm_seq LIKE 'rm_seq%' || #{searchWord}</if>
+		</if>
+	</sql>
+	<!-- 강의목록상세띄우기 -->
+	<select id="selectPlist" resultType="kr.kosmo.jobkorea.lss.model.LssLectureModel">
+		SELECT 
+				lec_seq,
+				user_id,
+				lec_nm,
+				lec_gl,
+				lec_pl,
+				rm_seq
+		FROM	tb_lecture
+		WHERE lec_seq =#{lec_seq}
+	</select>
+	<update id="updatePlist">
+		UPDATE tb_lecture
+		 SET
+			lec_pl =#{lec_pl}
+			
+		WHERE lec_seq=#{lec_seq}
+	</update>
+</mapper>
